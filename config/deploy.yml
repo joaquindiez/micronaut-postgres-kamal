@@ -1,0 +1,66 @@
+# Name of your application. Used to uniquely configure containers.
+service: my_app
+
+# Name of the container image.
+image: container_image
+
+# Deploy to these servers.
+servers:
+   web:
+     hosts:
+      - XXX.XXX.XXX.XXX
+     options:
+        network: "private" # This is important!
+
+# Credentials for your image host.
+registry:
+  # Specify the registry server, if you're not using Docker Hub
+  # server: registry.digitalocean.com / ghcr.io / ...
+  username: user
+
+  # Always use an access token rather than real password when possible.
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+
+env:
+  clear:
+    DATASOURCES_DEFAULT_USERNAME: "postgres"
+    DATASOURCES_DEFAULT_URL: "jdbc:postgresql://my_app-db:5432/my_awesome_app_production"
+  secret:
+    - DATASOURCES_DEFAULT_PASSWORD
+
+# Configure where the Dockerfile is in Micronaut
+builder:
+  dockerfile: build/docker/main/Dockerfile
+  context: "./build/docker/main"
+
+
+accessories:
+  db:
+    image: postgres:16
+    host: XXX.XXX.XXX.XXX
+    # port: 5432 # Remove this line!
+    env:
+      clear:
+        POSTGRES_USER: "postgres"
+        POSTGRES_DB: "my_awesome_app_production" # The database will be created automatically on first boot.
+      secret:
+        - POSTGRES_PASSWORD
+    directories:
+      - data:/var/lib/postgresql/data
+    options:
+      network: "private" # This is important!
+
+# Configure custom arguments for Traefik
+traefik:
+  options:
+    network: "private"
+
+
+# Configure a custom healthcheck (default is /up on port 3000)
+healthcheck:
+  path: /health
+  port: 8080
+  interval: 5s
+
